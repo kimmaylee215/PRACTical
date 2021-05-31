@@ -21,7 +21,8 @@ The presented scenarios are S5.1, S5.2, S6.1, and S6.2.
 
 
 The following files are used to run simulation with different patterns. 
-Depends on the number of replications, the computation can take hours. 
+Depends on the number of replications, the computation can take hours.
+High performance computing facility has been used to run the following scenarios.
 
 - “s1.R”, “s2.R”, “s3.R” and “s4.R” use both Rscripts.
 
