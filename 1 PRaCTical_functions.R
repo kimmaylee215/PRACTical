@@ -340,26 +340,19 @@ myTryCatch <- function(expr) {
 #   the following function is used to   # 
 # select treatment from methods C and D #
 # ------------------------------------- #
+# Ian's edits
 smallest_effect<-function(v, pat=pattern, no_p=no_pattern ){
   find.small<-function(i){ #v=output[[1]][,1];i=1
     if(all(is.na(v))){ # model is not fitted
       ind_effect<-sample(pat[[i]], 1)
       not_fit<-1
     }else{
-      t_effect<-c(NA,v)
+      t_effect<-c(0,v)
       t_in_pattern<-t_effect[pat[[i]]] 
       
       max.eff<-t_in_pattern[which.max(t_in_pattern)]
       min.eff<-t_in_pattern[which.min(t_in_pattern)]
-      t_neg<-pat[[i]][which.min(t_in_pattern)]
-      if(length(which(pat[[i]]==1))==1){ # check if t1 is in pattern i
-        if(max.eff>0){
-          test_t1_better<-max.eff>abs(min.eff)
-          if(test_t1_better==T){ind_effect<-1}else{ind_effect<-t_neg}
-        }else{ind_effect<-t_neg}
-        
-      }else{ ind_effect<-t_neg}
-      
+      ind_effect<-pat[[i]][which.min(t_in_pattern)]
       not_fit<-0
     }
     return(c(ind_effect, not_fit))

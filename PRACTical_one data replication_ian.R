@@ -1,0 +1,124 @@
+# Ian's variant of Kim's file to run one rep
+
+source('1 PRaCTical_functions.R')
+set.seed(2) 
+# with this seed, methods B1 B2, B3 have better mortality reduction 
+# than methods C and D, see the outputs of lines 146-148
+
+no_treatment=10 
+
+# treatment patterns
+pattern1<-c(2,3,5,8,10)
+pattern2<-1:7
+pattern3<-c(1,2,4,9,10)
+pattern4<-c(1,2,3,5,6,8,10)
+pattern5<-c(1,2,3,4,6,7)
+pattern6<-2:10
+pattern7<-1:10
+pattern8<-3:10
+patternV<-list(pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8)
+
+pattern<-patternV
+# treatment effect parameters
+# scenario 1
+alpha_1<-find_phi(0.2, alpha=0)
+phi_1<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=alpha_1)
+res_rate1<-res_probability(phi_1,alpha_1)
+
+
+N=1000 # total number of patients
+phi_v=phi_1 # true parameters of treatment effect
+pattern=patternV # personalized randomization lists
+response_prob_V=res_rate1 # response probability
+prob_pattern= c(0.2, 0.2, rep(0.1, 6)) # prevelance rate of patterns
+R=5 # number of trial replications
+
+# ----- the following is copied from 2 simulation_replication.R ----- #
+no_pattern<-length(pattern) # number of randomization lists
+
+no_comparison<-sapply(1:no_pattern, function(i){length(pattern[[i]])-1}) 
+# for each randomization list, the number of pairwise comparisons fixing a reference treatment. 
+
+no_treatment<-length(phi_v) # number of treatments
+
+res_probability_all<-matrix(rep(response_prob_V, no_pattern), ncol = no_treatment, byrow = T)
+colnames(res_probability_all)<-sapply(1:no_treatment, function(i){paste0("treatment_", i)} )
+rownames(res_probability_all)<-sapply(1:no_pattern, function(i){paste0("alpha_", i)} )
+# response rate: row= pattern, column=treatment. All rows have same values for this scenario
+
+# each person has prob_pattern to be allocated to one of the treatment patterns
+assigned_pattern<-t(rmultinom(N, size=1, prob_pattern))
+colnames(assigned_pattern)<-sapply(1:no_pattern, function(i){paste0("subgroup", i)} )
+
+# number of patients in each subgroup that is defined by the pattern
+size_pattern<-apply(assigned_pattern, 2, sum)
+lambda<-prob_pattern # true prevalence rate of patterns
+
+true.response.r<-lapply(1:no_pattern,function(i)res_probability_all[i, pattern[[i]]])
+# response rates of the treatments in each pattern
+
+
+true.mean.min<-lapply(1:no_pattern, function(i){
+  v<-true.response.r[[i]]
+  c("mean"=mean(v), "min"=min(v)) } )
+
+true.mean.min<-do.call(cbind, true.mean.min) 
+# compute the mean (and minimum value) of the treatments in each pattern 
+# will be used for the performance measures about the treatment decisions
+
+No_contrast<-length(unique(unlist(pattern))) 
+# this is the total number of treatments
+# to be used in method C and D as index for the nine treatment contrasts
+
+
+
+# ** the following come from the loop of the function, exclude the list of output ** #
+
+Alldata<-sapply(1:no_pattern, function(i){
+  generate_subset_data(i, size_pattern.=size_pattern, 
+                       pattern.=pattern, res_probability_all.=res_probability_all)})
+# generate one dataset
+
+
+# Ian's additions to fit model C
+# nma_data<-data.frame(y=unlist(Alldata[1,]),
+#                      treatment=factor(unlist(Alldata[2,])),
+#                      subgroup=factor(unlist(Alldata[4,])))#patient_subgroup)))
+# table(nma_data$subgroup,nma_data$treatment)
+# glm<-glm(y~factor(treatment)+factor(subgroup),data=nma_data,family=binomial(logit))
+# summary(glm)
+
+
+
+feq_t_subgroup<-sapply(1:no_pattern, function(i)table(Alldata[2,][[i]]))
+# show how many have been randomized to a treatment arm within a pattern
+
+feq_t<-table(unlist(Alldata[2,]))
+# show how many have been randomized to each treatment arm
+
+est_method_C<-fit_onestage_C(Alldata, no_p=no_pattern,   q.val=qnorm(0.975), no_contrast=No_contrast) # use original data
+# estimates of treatment contrasts from method C
+
+est_method_D<-fit_robustSE_D(Alldata, no_com=no_comparison, # use duplicated data
+                             no_p=no_pattern, 
+                             no_t=no_treatment, 
+                             size_p=size_pattern,no_contrast=No_contrast)
+# estimates of treatment contrasts from method D
+
+Identify_C=smallest_effect(est_method_C[,1], pat=pattern, no_p=no_pattern)
+# for method C
+# row 1: the best treatment for each pattern (column)
+# row 2: check if the model fails to fit, 1= fail, 0= model is fitted
+# when row two=1 a random treatment is drawn for the treatment decision
+
+
+### IAN'S CODE TO EXPLORE WHAT WE'VE DONE ###
+# Model fit for method C:
+est_method_C
+# -> treatment 4 is the best (most negative)
+
+# Best treatments for method C:
+Identify_C
+# -> treatment 4 is in patterns 3,5,7 but isn't recorded as the best
+
+### rest of file removed ###

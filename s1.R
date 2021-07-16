@@ -1,5 +1,5 @@
-source("~/1 PRaCTical_functions.R")
-source("~/2 simulation_replication.R")
+source("1 PRaCTical_functions.R")
+source("2 simulation_replication.R")
 no_treatment=10 
 
 # treatment patterns
@@ -33,7 +33,7 @@ task_id <- as.numeric(task_id_string) #
 
 
 set.seed(103)
-scenario_out<-simulation(N=1000, phi_v=phi_V[,task_id], 
+scenario_out<-simulation(N=100, phi_v=phi_V[,task_id], 
                          pattern=patternV, 
                          response_prob_V=response_rate[,task_id], 
                          prob_pattern= c(0.2, 0.2, rep(0.1, 6)), R=50000)

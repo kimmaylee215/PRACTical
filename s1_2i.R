@@ -19,9 +19,15 @@ pattern<-patternV
 alpha_1.2<-find_phi(seq(0.05, 0.6, length.out = 8), alpha=0)
 alpha_1.2[3]<-find_phi(0.2,alpha=0)
 phi_1.2<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=alpha_1.2[3])
+
+# my change to make pattern 3 very bad
+# alpha_1.2[3]<-find_phi(0.2,alpha=-5)
+# alpha_1.2 # check!
+# phi_1.2<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=0)
+
 #res_rate1.2<-res_probability(phi_1.2,alpha_1.2[3])
 res_rate_mat<-t(sapply(alpha_1.2, function(i)res_probability(phi_1.2,i)))
-res_rate_mat<-res_rate_mat[c(3,1,2,4:8),]
+res_rate_mat<-res_rate_mat[c(3,1,2,4:8),] # I don't know why Kim did this but it doesn't matter
 
 
 
@@ -301,14 +307,27 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
 }
 
 
-set.seed(103)
-scenario_out<-simulation(N=1000, phi_v=phi_1.2, 
+#set.seed(103)
+# 100 reps take ~50s
+lambda = c(0.2, 0.2, rep(0.1, 6))
+scenario_out<-simulation(N=500, phi_v=phi_1.2, 
                          pattern=patternV, 
                          res_probability_all=res_rate_mat, 
-                         prob_pattern= c(0.2, 0.2, rep(0.1, 6)), R=1000)
+                         prob_pattern= lambda, R=100)
 filename<-paste0("scenario_A_3.RData")
 save(scenario_out, file=filename) # task_id=1
 warnings()
 
 # Ian's addition to view output
-estimand2$mortality_gain %*% lambda
+# patterns
+patternV
+# pattern prevalences
+lambda
+# treatment effects
+phi_1.2
+# p(y|row=pattern, col=treatment) 
+res_rate_mat
+# overall PMs
+scenario_out$estimand2 
+# PMs by pattern
+scenario_out$ex_performance_out

@@ -1,33 +1,8 @@
-source("1 PRaCTical_functions.R")
+# taken from Kim's file 2
+# 5 reps of N=1000
+# i haven't yet worked out how to view one simulated data set
 
-no_treatment=10 
-
-# treatment patterns
-pattern1<-c(2,3,5,8,10)
-pattern2<-1:7
-pattern3<-c(1,2,4,9,10)
-pattern4<-c(1,2,3,5,6,8,10)
-pattern5<-c(1,2,3,4,6,7)
-pattern6<-2:10
-pattern7<-1:10
-pattern8<-3:10
-patternV<-list(pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8)
-
-pattern<-patternV
-# treatment effect parameters
-# scenario 1.2
-alpha_1.2<-find_phi(seq(0.05, 0.6, length.out = 8), alpha=0)
-alpha_1.2[3]<-find_phi(0.2,alpha=0)
-phi_1.2<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=alpha_1.2[3])
-#res_rate1.2<-res_probability(phi_1.2,alpha_1.2[3])
-res_rate_mat<-t(sapply(alpha_1.2, function(i)res_probability(phi_1.2,i)))
-res_rate_mat<-res_rate_mat[c(3,1,2,4:8),]
-
-
-
-simulation<-function(N, phi_v, pattern, res_probability_all,
-                     prob_pattern,  R=10){
-  # N=1000; phi_v=phi_1; pattern=pattern3; response_prob_V=res_rate1; prob_pattern=rep(0.1, length(pattern3) ); R=5
+ N=1000; phi_v=phi_1; pattern=patternV; response_prob_V=res_rate1; prob_pattern=c(0.2, 0.2, rep(0.1, 6)); R=5
   
   no_pattern<-length(pattern)
   
@@ -35,7 +10,7 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   
   no_treatment<-length(phi_v)
   
-  #res_probability_all<-matrix(rep(response_prob_V, no_pattern), ncol = 10, byrow = T)
+  res_probability_all<-matrix(rep(response_prob_V, no_pattern), ncol = no_treatment, byrow = T)
   colnames(res_probability_all)<-sapply(1:no_treatment, function(i){paste0("treatment_", i)} )
   rownames(res_probability_all)<-sapply(1:no_pattern, function(i){paste0("alpha_", i)} )
   
@@ -61,9 +36,10 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
     Alldata<-sapply(1:no_pattern, function(i){
       generate_subset_data(i, size_pattern.=size_pattern, 
                            pattern.=pattern, res_probability_all.=res_probability_all)})
+
     feq_t_subgroup<-sapply(1:no_pattern, function(i)table(Alldata[2,][[i]]))
     feq_t<-table(unlist(Alldata[2,]))
-
+    
     est_method_C<-fit_onestage_C(Alldata, no_p=no_pattern,   q.val=qnorm(0.975), no_contrast=No_contrast) # use original data
     est_method_D<-fit_robustSE_D(Alldata, no_com=no_comparison, # use duplicated data
                                  no_p=no_pattern, 
@@ -125,7 +101,10 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
                     nearbest_treatment_10=nearbest_treatment_10,
                     diff_min=diff_min )
     #names(measure)<-c("pattern1", "pattern2", "pattern3", "pattern4", "pattern5", "pattern6", "pattern7", "pattern8")
+    
+    
     identify_fail<-rbind(method_A_f[2,], Identify_method_B[[2]], Identify_C[2,], Identify_D[2,])
+    
     
     list(identified_best_t=identified_best_t,
          est_method_C=est_method_C,
@@ -220,7 +199,6 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   
   
   # performance of each method
-  # performance of each method
   ex_performance<-function(q,k){
     mat_all<-do.call(cbind,lapply(1:R, function(z){
       output_replication[[z]]$performance_m[[q]][,k] } ) )
@@ -242,6 +220,7 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   
   estimand2_MCSE<-cbind(Mortaliy=apply(mortality_gain, 2,function(x){ 
     sqrt(var(x[complete.cases(x)])/length(x[complete.cases(x)])) }), estimand2_MCSE)
+  #rownames(method_c_property)<- rownames(method_d_property)<- sapply(2:10, function(i){paste0("phi_", i, "-phi_1")} )
   
   size_per_arm<-size_pattern/(no_comparison+1)
   
@@ -285,30 +264,15 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   feq_treatment_subgroup<-sapply(1:no_pattern, comp_no_t_mean)
   
   out<-list(method_C_property=method_c_property,
-            method_D_property=method_d_property,#estimator_property=estimator_property, 
-            ex_performance_out=ex_performance_out,
-            suggested_treatment_each=suggested_treatment_each,
-            estimator_all=estimator_all,
-            model_var_all=model_var_all,
-            all_diff_min=all_diff_min,
+            method_D_property=method_d_property,
+            #ex_performance_out=ex_performance_out,
+            #suggested_treatment_each=suggested_treatment_each,
+            #estimator_all=estimator_all,
+            #model_var_all=model_var_all,
+            #all_diff_min=all_diff_min,
             method_fail_no=methodA_fail_no,
             estimand2=estimand2,
             estimand2_MCSE=estimand2_MCSE, 
-            ex_arm_size=ex_arm_size,
-            overall_size=feq_treatment, sub_size=feq_treatment_subgroup,
+            #ex_arm_size=ex_arm_size,
+            overall_size=feq_treatment, #sub_size=feq_treatment_subgroup,
             Pattern=pattern)
-  return(out)
-}
-
-
-set.seed(103)
-scenario_out<-simulation(N=1000, phi_v=phi_1.2, 
-                         pattern=patternV, 
-                         res_probability_all=res_rate_mat, 
-                         prob_pattern= c(0.2, 0.2, rep(0.1, 6)), R=1000)
-filename<-paste0("scenario_A_3.RData")
-save(scenario_out, file=filename) # task_id=1
-warnings()
-
-# Ian's addition to view output
-estimand2$mortality_gain %*% lambda
