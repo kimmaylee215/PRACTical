@@ -1,4 +1,4 @@
-source("1 PRaCTical_functions.R")
+source("1 PRaCTical_functions16072021.R")
 
 no_treatment=10 
 
@@ -11,6 +11,7 @@ pattern5<-c(1,2,3,4,6,7)
 pattern6<-2:10
 pattern7<-1:10
 pattern8<-3:10
+# pattern8<-6:10 # Change 2: only poor treatments in pattern 8
 patternV<-list(pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8)
 
 pattern<-patternV
@@ -18,7 +19,16 @@ pattern<-patternV
 # scenario 1.2
 alpha_1.2<-find_phi(seq(0.05, 0.6, length.out = 8), alpha=0)
 alpha_1.2[3]<-find_phi(0.2,alpha=0)
+alpha_1.2 <- -2 - alpha_1.2 # Change 3: reverse pattern effects
 phi_1.2<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=alpha_1.2[3])
+#phi_1.2 <- -phi_1.2 # Change 4: reverse treatment effects
+phi_1.2 <- 0.001*phi_1.2 # Change 5: tiny treatment effects
+
+Nobs <- 1000
+# Nobs <- 10000 # Change 1: large sample to avoid perfect prediction
+Nreps <- 500
+
+### END OF SETTINGS
 
 # my change to make pattern 3 very bad
 # alpha_1.2[3]<-find_phi(0.2,alpha=-5)
@@ -310,10 +320,10 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
 #set.seed(103)
 # 100 reps take ~50s
 lambda = c(0.2, 0.2, rep(0.1, 6))
-scenario_out<-simulation(N=500, phi_v=phi_1.2, 
+scenario_out<-simulation(N=Nobs, phi_v=phi_1.2, 
                          pattern=patternV, 
                          res_probability_all=res_rate_mat, 
-                         prob_pattern= lambda, R=100)
+                         prob_pattern= lambda, R=Nreps)
 filename<-paste0("scenario_A_3.RData")
 save(scenario_out, file=filename) # task_id=1
 warnings()
@@ -329,5 +339,6 @@ phi_1.2
 res_rate_mat
 # overall PMs
 scenario_out$estimand2 
+scenario_out$estimand2_MCSE
 # PMs by pattern
 scenario_out$ex_performance_out

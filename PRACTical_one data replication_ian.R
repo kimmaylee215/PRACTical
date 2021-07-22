@@ -1,11 +1,15 @@
 # Ian's variant of Kim's file to run one rep
+# run this with N=100 and seed=5 to demonstrate that method C mis-handles perfect prediction
+#   as a treatment with 0 deaths is never selected as best
+# N=1000 and seed=2 is a good example of B3 beating C
 
-source('1 PRaCTical_functions.R')
-set.seed(2) 
-# with this seed, methods B1 B2, B3 have better mortality reduction 
-# than methods C and D, see the outputs of lines 146-148
+source('1 PRaCTical_functions16072021.R')
+
+### SETTINGS
+set.seed(5)
 
 no_treatment=10 
+N=100 # total number of patients
 
 # treatment patterns
 pattern1<-c(2,3,5,8,10)
@@ -17,6 +21,7 @@ pattern6<-2:10
 pattern7<-1:10
 pattern8<-3:10
 patternV<-list(pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8)
+### END OF SETTINGS (MOSTLY)
 
 pattern<-patternV
 # treatment effect parameters
@@ -26,7 +31,6 @@ phi_1<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=alpha_1)
 res_rate1<-res_probability(phi_1,alpha_1)
 
 
-N=1000 # total number of patients
 phi_v=phi_1 # true parameters of treatment effect
 pattern=patternV # personalized randomization lists
 response_prob_V=res_rate1 # response probability
@@ -111,14 +115,43 @@ Identify_C=smallest_effect(est_method_C[,1], pat=pattern, no_p=no_pattern)
 # row 2: check if the model fails to fit, 1= fail, 0= model is fitted
 # when row two=1 a random treatment is drawn for the treatment decision
 
+Identify_D=smallest_effect(est_method_D[,1], pat=pattern, no_p=no_pattern)
+# for method D
+# row 1: the best treatment for each pattern (column)
+# row 2: check if the model fails to fit, 1= fail, 0= model is fitted
+# when row two=1 a random treatment is drawn for the treatment decision
+
+
+method_A_f<-fit_subgroup_A(Alldata, no_p=no_pattern)   # fit each subgroup
+# method A: fit a model to each pattern and identify the best treatment
+# row 1 and 2 carry the same interpretation as methods C and D
+
+Identify_method_B<-methodB(Alldata, no_p=no_pattern, size_p=size_pattern, pat=pattern)    
+# method B with different pooling: fit a model to each pattern and identify the best treatment
+# list 1 correspond to estimated best decision
+# list 2 check if the model fails to fit, 1= fail, 0= model is fitted
+# each row within a list corresponds to an approach of pooling
+
+identified_best_t<-rbind(method_A=method_A_f[1,],
+                         method_B1=Identify_method_B[[1]][1,],
+                         method_B2=Identify_method_B[[1]][2,],
+                         method_B3=Identify_method_B[[1]][3,],
+                         method_C=Identify_C[1,],
+                         method_D=Identify_D[1,] )
+# combine estimated best treatments from all methods, row= methods, column= pattern
+
+
+### REST OF PROGRAM DELETED
 
 ### IAN'S CODE TO EXPLORE WHAT WE'VE DONE ###
+#  tabulate data
+nma_data<-data.frame(y=unlist(Alldata[1,]),
+                     treatment=factor(unlist(Alldata[2,])),
+                     subgroup=factor(unlist(Alldata[4,])))#patient_subgroup)))
+table(nma_data$y,nma_data$treatment)
 # Model fit for method C:
 est_method_C
 # -> treatment 4 is the best (most negative)
 
-# Best treatments for method C:
-Identify_C
-# -> treatment 4 is in patterns 3,5,7 but isn't recorded as the best
-
-### rest of file removed ###
+# Best treatments for each method:
+identified_best_t
