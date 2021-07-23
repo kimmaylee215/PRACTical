@@ -3,13 +3,13 @@
 #   as a treatment with 0 deaths is never selected as best
 # N=1000 and seed=2 is a good example of B3 beating C
 
-source('1 PRaCTical_functions16072021.R')
+source('1 PRaCTical_functions22072021i.R')
 
 ### SETTINGS
 set.seed(5)
 
 no_treatment=10 
-N=100 # total number of patients
+N=1000 # total number of patients
 
 # treatment patterns
 pattern1<-c(2,3,5,8,10)
@@ -148,7 +148,7 @@ identified_best_t<-rbind(method_A=method_A_f[1,],
 nma_data<-data.frame(y=unlist(Alldata[1,]),
                      treatment=factor(unlist(Alldata[2,])),
                      subgroup=factor(unlist(Alldata[4,])))#patient_subgroup)))
-table(nma_data$y,nma_data$treatment)
+table(nma_data$y,nma_data$treatment,nma_data$subgroup)
 # Model fit for method C:
 est_method_C
 # -> treatment 4 is the best (most negative)

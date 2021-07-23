@@ -1,4 +1,4 @@
-source("1 PRaCTical_functions16072021.R")
+source("1 PRaCTical_functions22072021.R")
 
 no_treatment=10 
 
@@ -26,7 +26,9 @@ phi_1.2 <- 0.001*phi_1.2 # Change 5: tiny treatment effects
 
 Nobs <- 1000
 # Nobs <- 10000 # Change 1: large sample to avoid perfect prediction
-Nreps <- 500
+Nreps <- 5000
+
+set.seed(1)
 
 ### END OF SETTINGS
 
@@ -317,7 +319,6 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
 }
 
 
-#set.seed(103)
 # 100 reps take ~50s
 lambda = c(0.2, 0.2, rep(0.1, 6))
 scenario_out<-simulation(N=Nobs, phi_v=phi_1.2, 
@@ -340,5 +341,9 @@ res_rate_mat
 # overall PMs
 scenario_out$estimand2 
 scenario_out$estimand2_MCSE
-# PMs by pattern
-scenario_out$ex_performance_out
+# Better treatment by pattern
+scenario_out$ex_performance_out$better_treatment_I
+round(sqrt(scenario_out$ex_performance_out$better_treatment_I*(1-scenario_out$ex_performance_out$better_treatment_I)/Nreps),4)
+# Best treatment by pattern
+scenario_out$ex_performance_out$best_treatment_I
+round(sqrt(scenario_out$ex_performance_out$best_treatment_I*(1-scenario_out$ex_performance_out$best_treatment_I)/Nreps),4)
