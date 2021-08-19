@@ -26,7 +26,7 @@ phi_1.2 <- 0.001*phi_1.2 # Change 5: tiny treatment effects
 
 Nobs <- 1000
 # Nobs <- 10000 # Change 1: large sample to avoid perfect prediction
-Nreps <- 5000
+Nreps <- 2
 
 set.seed(1)
 
@@ -75,13 +75,28 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   No_contrast<-length(unique(unlist(pattern))) 
   
   gen.data<-function(j){    
-    
+print("Starting gen.data")    
     Alldata<-sapply(1:no_pattern, function(i){
       generate_subset_data(i, size_pattern.=size_pattern, 
                            pattern.=pattern, res_probability_all.=res_probability_all)})
     feq_t_subgroup<-sapply(1:no_pattern, function(i)table(Alldata[2,][[i]]))
     feq_t<-table(unlist(Alldata[2,]))
-
+print("Data for pattern 1: outcome by treatment")
+print(table(Alldata[,1]$responses,Alldata[,1]$treatment_label))
+print("Data for pattern 2: outcome by treatment")
+print(table(Alldata[,2]$responses,Alldata[,2]$treatment_label))
+print("Data for pattern 3: outcome by treatment")
+print(table(Alldata[,3]$responses,Alldata[,3]$treatment_label))
+print("Data for pattern 4: outcome by treatment")
+print(table(Alldata[,4]$responses,Alldata[,4]$treatment_label))
+print("Data for pattern 5: outcome by treatment")
+print(table(Alldata[,5]$responses,Alldata[,5]$treatment_label))
+print("Data for pattern 6: outcome by treatment")
+print(table(Alldata[,6]$responses,Alldata[,6]$treatment_label))
+print("Data for pattern 7: outcome by treatment")
+print(table(Alldata[,7]$responses,Alldata[,7]$treatment_label))
+print("Data for pattern 8: outcome by treatment")
+print(table(Alldata[,8]$responses,Alldata[,8]$treatment_label))
     est_method_C<-fit_onestage_C(Alldata, no_p=no_pattern,   q.val=qnorm(0.975), no_contrast=No_contrast) # use original data
     est_method_D<-fit_robustSE_D(Alldata, no_com=no_comparison, # use duplicated data
                                  no_p=no_pattern, 
@@ -90,10 +105,12 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
     
     Identify_C=smallest_effect(est_method_C[,1], pat=pattern, no_p=no_pattern)
     Identify_D=smallest_effect(est_method_D[,1], pat=pattern, no_p=no_pattern)
-    
+print("Identify_C")
+print(Identify_C)    
     
     method_A_f<-fit_subgroup_A(Alldata, no_p=no_pattern)   # fit each subgroup
-    
+print("method_A_f")
+print(method_A_f)    
     
     Identify_method_B<-methodB(Alldata, no_p=no_pattern, size_p=size_pattern, pat=pattern)    
     
@@ -235,8 +252,7 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   
   suggested_treatment_each<-lapply(1:no_pattern, suggested_treatment)
   names(suggested_treatment_each)<-sapply(1:no_pattern, function(i)paste0("pattern",i))
-  
-  
+
   # performance of each method
   # performance of each method
   ex_performance<-function(q,k){

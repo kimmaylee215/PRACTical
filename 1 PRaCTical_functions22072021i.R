@@ -227,7 +227,6 @@ print(dim(exD[inc_ind,]))
 print(summary(exD[inc_ind,]))
 print(table(exD[inc_ind,]$treatment,exD[inc_ind,]$pat_lab))
 print(fit_sub(exD[inc_ind,]))
-doodah
 }
   
   all_direct<-function(i){
