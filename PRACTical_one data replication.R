@@ -1,7 +1,8 @@
 source('1 PRaCTical_functions.R')
 set.seed(3127) 
-# with this seed, methods B1 B2, B3 have better mortality reduction 
-# than methods C and D, see the outputs of lines 146-148
+
+# 10/8/2021 added lines 81 to 92
+# to print response rates within each pattern & overall response rate
 
 no_treatment=10 
 
@@ -76,6 +77,20 @@ Alldata<-sapply(1:no_pattern, function(i){
   generate_subset_data(i, size_pattern.=size_pattern, 
                        pattern.=pattern, res_probability_all.=res_probability_all)})
 # generate one dataset
+
+# 10/8/2021 check response rate per subgroup #
+sapply(1:8,function(k)table(Alldata[,k]$treatment_label, Alldata[,k]$responses)[,2]/table(Alldata[,k]$treatment_label) )
+# show the response rate per arm within each pattern
+
+table(unlist(Alldata[1,]), unlist(Alldata[2,]))
+# responses to each treatment
+
+arm.size<-apply(table(unlist(Alldata[1,]), unlist(Alldata[2,])), 2, sum)
+# compute arm size
+
+table(unlist(Alldata[1,]), unlist(Alldata[2,]))[2,]/arm.size
+# overall response rate to each treatment
+# 10/8/2021 end #
 
 feq_t_subgroup<-sapply(1:no_pattern, function(i)table(Alldata[2,][[i]]))
 # show how many have been randomized to a treatment arm within a pattern
