@@ -1,3 +1,4 @@
+# 18/8/2021 replaced logistic regression with firth in methods A-C
 # 22/7/2021 found an error in fit_sub part II
 # 16/7 2021 replace the treatment rankings estimation in 
 # function i) fit_subgroup_A
@@ -17,6 +18,7 @@
 library(stringr)
 library(multiwayvcov)
 require(sandwich)
+library(logistf)
 # -------------------- #
 # response probability #
 # -------------------- #
@@ -69,7 +71,7 @@ fit_subgroup_A<-function(alldata, no_p=no_pattern){
   fit_subA<-function(i){
     sub_data<-alldata[,i]
     sub_data$treatment<-as.factor(sub_data$treatment_label)
-    my.glm<-myTryCatch(glm(responses~ treatment, data=sub_data,family="binomial"))
+    my.glm<-myTryCatch(logistf(responses~ treatment, data=sub_data))
     if(is.null(my.glm$error) ) # if there is no error in model fit (there could be warning)
     { 
       sub_fit<-my.glm[[1]]
@@ -98,8 +100,7 @@ fit_subgroup_A<-function(alldata, no_p=no_pattern){
       out<-ind_effect
       not_fit<-0
     }
-print(paste("fit_subA: best in pattern", i, "is treatment", out))    
-print(my.glm)
+    
     return(c(out,not_fit))
     
   }
@@ -115,11 +116,10 @@ fit_sub<-function(sub_data){
   #sub_data<-data_selected[[i]] is a matrix of data, #sub_data[,1]= response  #sub_data[,2]= treatment  #sub_data[,3]= pattern
   response<-sub_data[,1]; treatment_ind<-sub_data[,2]; pattern_var<-sub_data[,3]
   t_label<-sort(unique(treatment_ind)) 
-# print("table(pattern_var,treatment_ind)")
-# print(table(pattern_var,treatment_ind))  
+  
   if(length(unique(pattern_var))==1){ # there is only one pattern
     
-    my.glm<-myTryCatch( glm(response~ as.factor(treatment_ind),family="binomial"  ) )
+    my.glm<-myTryCatch( logistf(response~ as.factor(treatment_ind)) )
     
     if(is.null(my.glm$error) ) # can fit the model
     { 
@@ -142,14 +142,11 @@ fit_sub<-function(sub_data){
       
     } else{ # model can't fit
       ind_effect<-my.glm$error[1]$message }
-# print(paste("fit_sub for method B: best in pattern is treatment", ind_effect))
-# print(summary(my.glm))
-# print(my.glm)
-
+    
     
   }else{ # if there are more than one pattern
     
-    my.glm<-myTryCatch( glm(response~ as.factor(treatment_ind)+ as.factor(pattern_var), family = "binomial" ) )
+    my.glm<-myTryCatch( logistf(response~ as.factor(treatment_ind)+ as.factor(pattern_var)) )
     if(is.null(my.glm$error) ) 
     { 
       sub_fit<-my.glm[[1]]
@@ -174,9 +171,6 @@ fit_sub<-function(sub_data){
     
   }
   
-# print("my.glm for method B")
-# print(my.glm)
-  
   if(is.character(ind_effect)){ 
     out<-sample(t_label,1)
     not_fit<-1
@@ -194,7 +188,6 @@ methodB<-function(alldata=Alldata,
                   no_p=no_pattern, 
                   size_p=size_pattern,
                   pat=pattern){
-print("STARTING METHOD B")
   # generate individual data for method B
   id_v<-cumsum(size_p)
   ID<-c(1:id_v[1], unlist(sapply(1:(no_p-1),function(i){ (id_v[i]+1):id_v[i+1] } )) )
@@ -204,8 +197,7 @@ print("STARTING METHOD B")
   # identify data that have same treatment to that of pattern k
   extract_f1<-function(j,k){which(ind_Data$treatment==pat[[k]][j]) }
   extract_f2<-function(K){unlist(sapply(1:length(pat[[K]]), function(J)extract_f1(J,K)))}
-#print("methodB: ind_Data[extract_f2(i),]")
-#print(ind_Data[extract_f2(i),])
+  
   must_include<-function(i){
     exD<-ind_Data[extract_f2(i),]
     # identify if pattern k has treatment of pattern i, all true means contain all
@@ -216,35 +208,23 @@ print("STARTING METHOD B")
     incI<-incI[complete.cases(incI)]
     inc_ind<-unlist(sapply(incI, function(x) which(exD$pat_lab== x) ) )
     fit_sub(exD[inc_ind,])
-    print(paste("Number of individuals analysed for method B1, pattern", i, "(ignore the 4)"))
-    print(dim(exD[inc_ind,]))
-    print(paste("Pattern by treatment for method B1, pattern", i))
-    print(table(exD[inc_ind,]$pat_lab,exD[inc_ind,]$treatment))
+    
   }
   
   minimal<-function(i){
     exD<-ind_Data[extract_f2(i),]
+    
     # minimal
     test_first_e<-function(k){ if( length(which(pat[[k]]==pat[[i]][1])) ==1){k}else{NA} }
     incI<-c(i, sapply(patternI[-i],   test_first_e )  )
     incI<-incI[complete.cases(incI)]
     inc_ind<-unlist(sapply(incI, function(x) which(exD$pat_lab== x) ) )
     fit_sub(exD[inc_ind,])
-print(paste("Number of individuals analysed for method B2, pattern", i, "(ignore the 4)"))
-print(dim(exD[inc_ind,]))
-# print(summary(exD[inc_ind,]))
-print(paste("Pattern by treatment for method B2, pattern", i))
-print(table(exD[inc_ind,]$pat_lab,exD[inc_ind,]$treatment))
-# print(fit_sub(exD[inc_ind,]))
-}
+  }
   
   all_direct<-function(i){
     exD<-ind_Data[extract_f2(i),]
     fit_sub(exD)
-    print(paste("Number of individuals analysed for method B3, pattern", i, "(ignore the 4)"))
-    print(dim(exD))
-    print(paste("Pattern by treatment for method B3, pattern", i))
-    print(table(exD$pat_lab,exD$treatment))
   }
   
   fit_partly_pattern_B1=sapply(1:no_p, must_include)
@@ -271,7 +251,7 @@ fit_onestage_C<-function(alldata=Alldata, no_p=no_pattern,   q.val=qnorm(0.975),
   nma_data<-data.frame(y=unlist(alldata[1,]),
                        treatment=factor(unlist(alldata[2,])),
                        subgroup=factor(unlist(alldata[4,])))#patient_subgroup)))
-  my.glm<-myTryCatch(glm(y~treatment+ subgroup,family="binomial",data=nma_data) )
+  my.glm<-myTryCatch(logistf(y~treatment+ subgroup,family="binomial") )
   
   if(is.null(my.glm$error) ) #if do not have an error, model is fitted
   { 
@@ -340,7 +320,7 @@ fit_robustSE_D<-function(alldata=Alldata, no_com=no_comparison,
   # note that some R version would convert the class of y to factor, if so, use the following line 292 instead of 294
   #fit_glm<-myTryCatch( glm(as.numeric(levels(y))[y]~treatment+id_comparison,family="binomial",data=dup_data) )
   
-  fit_glm<-myTryCatch( glm(as.numeric(y)~treatment+id_comparison,family="binomial",data=dup_data) )
+  fit_glm<-myTryCatch( glm(as.numeric(y)~treatment+id_comparison,data=dup_data,family="binomial") )
   
   if(is.null(fit_glm$error) ) #if there is no error, model is fitted 
   { 

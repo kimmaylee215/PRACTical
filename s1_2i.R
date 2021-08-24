@@ -1,4 +1,6 @@
-source("1 PRaCTical_functions22072021.R")
+source("1 PRaCTical_functions22072021_firth.R")
+
+### START OF SETTINGS
 
 no_treatment=10 
 
@@ -12,36 +14,44 @@ pattern6<-2:10
 pattern7<-1:10
 pattern8<-3:10
 # pattern8<-6:10 # Change 2: only poor treatments in pattern 8
-patternV<-list(pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8)
 
-pattern<-patternV
 # treatment effect parameters
 # scenario 1.2
 alpha_1.2<-find_phi(seq(0.05, 0.6, length.out = 8), alpha=0)
 alpha_1.2[3]<-find_phi(0.2,alpha=0)
-alpha_1.2 <- -2 - alpha_1.2 # Change 3: reverse pattern effects
+#alpha_1.2 <- -2 - alpha_1.2 # Change 3: reverse pattern effects
 phi_1.2<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=alpha_1.2[3])
 #phi_1.2 <- -phi_1.2 # Change 4: reverse treatment effects
 phi_1.2 <- 0.001*phi_1.2 # Change 5: tiny treatment effects
+#phi_1.2 <- -0.001*phi_1.2 # Change 5: tiny & reversed treatment effects
+
+# Change 6: exactly reverse the order of the treatments
+# shouldn't affect results at all
+# pattern1 <- rev(11-pattern1)
+# pattern2 <- rev(11-pattern2)
+# pattern3 <- rev(11-pattern3)
+# pattern4 <- rev(11-pattern4)
+# pattern5 <- rev(11-pattern5)
+# pattern6 <- rev(11-pattern6)
+# pattern7 <- rev(11-pattern7)
+# pattern8 <- rev(11-pattern8)
+# phi_1.2 <- rev(phi_1.2)
 
 Nobs <- 1000
 # Nobs <- 10000 # Change 1: large sample to avoid perfect prediction
-Nreps <- 2
+
+Nreps <- 1000 # minimum 2, fails for 1
 
 set.seed(1)
-
-### END OF SETTINGS
-
-# my change to make pattern 3 very bad
-# alpha_1.2[3]<-find_phi(0.2,alpha=-5)
-# alpha_1.2 # check!
-# phi_1.2<-find_phi(seq(0.1, 0.3, length.out = no_treatment), alpha=0)
 
 #res_rate1.2<-res_probability(phi_1.2,alpha_1.2[3])
 res_rate_mat<-t(sapply(alpha_1.2, function(i)res_probability(phi_1.2,i)))
 res_rate_mat<-res_rate_mat[c(3,1,2,4:8),] # I don't know why Kim did this but it doesn't matter
 
+### END OF SETTINGS
 
+patternV<-list(pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8)
+pattern<-patternV
 
 simulation<-function(N, phi_v, pattern, res_probability_all,
                      prob_pattern,  R=10){
@@ -75,28 +85,28 @@ simulation<-function(N, phi_v, pattern, res_probability_all,
   No_contrast<-length(unique(unlist(pattern))) 
   
   gen.data<-function(j){    
-print("Starting gen.data")    
+# print(paste("Starting gen.data, replicate",j))
     Alldata<-sapply(1:no_pattern, function(i){
       generate_subset_data(i, size_pattern.=size_pattern, 
                            pattern.=pattern, res_probability_all.=res_probability_all)})
     feq_t_subgroup<-sapply(1:no_pattern, function(i)table(Alldata[2,][[i]]))
     feq_t<-table(unlist(Alldata[2,]))
-print("Data for pattern 1: outcome by treatment")
-print(table(Alldata[,1]$responses,Alldata[,1]$treatment_label))
-print("Data for pattern 2: outcome by treatment")
-print(table(Alldata[,2]$responses,Alldata[,2]$treatment_label))
-print("Data for pattern 3: outcome by treatment")
-print(table(Alldata[,3]$responses,Alldata[,3]$treatment_label))
-print("Data for pattern 4: outcome by treatment")
-print(table(Alldata[,4]$responses,Alldata[,4]$treatment_label))
-print("Data for pattern 5: outcome by treatment")
-print(table(Alldata[,5]$responses,Alldata[,5]$treatment_label))
-print("Data for pattern 6: outcome by treatment")
-print(table(Alldata[,6]$responses,Alldata[,6]$treatment_label))
-print("Data for pattern 7: outcome by treatment")
-print(table(Alldata[,7]$responses,Alldata[,7]$treatment_label))
-print("Data for pattern 8: outcome by treatment")
-print(table(Alldata[,8]$responses,Alldata[,8]$treatment_label))
+# print("Data for pattern 1: outcome by treatment")
+# print(table(Alldata[,1]$responses,Alldata[,1]$treatment_label))
+# print("Data for pattern 2: outcome by treatment")
+# print(table(Alldata[,2]$responses,Alldata[,2]$treatment_label))
+# print("Data for pattern 3: outcome by treatment")
+# print(table(Alldata[,3]$responses,Alldata[,3]$treatment_label))
+# print("Data for pattern 4: outcome by treatment")
+# print(table(Alldata[,4]$responses,Alldata[,4]$treatment_label))
+# print("Data for pattern 5: outcome by treatment")
+# print(table(Alldata[,5]$responses,Alldata[,5]$treatment_label))
+# print("Data for pattern 6: outcome by treatment")
+# print(table(Alldata[,6]$responses,Alldata[,6]$treatment_label))
+# print("Data for pattern 7: outcome by treatment")
+# print(table(Alldata[,7]$responses,Alldata[,7]$treatment_label))
+# print("Data for pattern 8: outcome by treatment")
+# print(table(Alldata[,8]$responses,Alldata[,8]$treatment_label))
     est_method_C<-fit_onestage_C(Alldata, no_p=no_pattern,   q.val=qnorm(0.975), no_contrast=No_contrast) # use original data
     est_method_D<-fit_robustSE_D(Alldata, no_com=no_comparison, # use duplicated data
                                  no_p=no_pattern, 
@@ -105,14 +115,22 @@ print(table(Alldata[,8]$responses,Alldata[,8]$treatment_label))
     
     Identify_C=smallest_effect(est_method_C[,1], pat=pattern, no_p=no_pattern)
     Identify_D=smallest_effect(est_method_D[,1], pat=pattern, no_p=no_pattern)
-print("Identify_C")
-print(Identify_C)    
-    
+# print("est_method_C")
+# print(est_method_C)
+# print("Identify_C")
+# print(Identify_C)    
+# print("est_method_D")
+# print(est_method_D)
+# print("Identify_D")
+# print(Identify_D)    
+
     method_A_f<-fit_subgroup_A(Alldata, no_p=no_pattern)   # fit each subgroup
-print("method_A_f")
-print(method_A_f)    
+# print("method_A_f")
+# print(method_A_f)    
     
     Identify_method_B<-methodB(Alldata, no_p=no_pattern, size_p=size_pattern, pat=pattern)    
+# print("Identify_method_B")
+# print(Identify_method_B)    
     
     identified_best_t<-rbind(method_A=method_A_f[1,],
                              method_B1=Identify_method_B[[1]][1,],
@@ -121,7 +139,9 @@ print(method_A_f)
                              method_C=Identify_C[1,],
                              method_D=Identify_D[1,] )
     
-    
+# print("identified_best_t")
+# print(identified_best_t)
+
     identify_bestR<-function(k){
       #v<-sapply(1:6, function(m){ which( pattern [[k]]==identified_best_t[m,k]) } ) 
       v<-sapply(1:6, function(m){ 
@@ -204,10 +224,8 @@ print(method_A_f)
       #  if(all(is.numeric(x))){mean(x)}else{
       #    indx<-which(is.na(str_extract(x, "[0-9]+")))
       #    mean(as.numeric(x[-indx])) } }  )
-      
       pw<-v2[which(is.na(str_extract(v2[,3], "[0-9]+"))), 3]
-      
-      
+
       coverage_ind<-rbind(out_one[,5] >=t.diff, out_one[,4] <=t.diff)
       coverage_count<-apply(coverage_ind, 2, sum)
       coverage_prob<-length(which(coverage_count==2)) / length(which(is.na(coverage_count)==F))
@@ -249,7 +267,6 @@ print(method_A_f)
       if(all(is.na(x))){rep(NA,3)}else{
         quantile(x, probs =c(0.25,0.5,0.75), type = 1, na.rm = T ) } } ) )
   }
-  
   suggested_treatment_each<-lapply(1:no_pattern, suggested_treatment)
   names(suggested_treatment_each)<-sapply(1:no_pattern, function(i)paste0("pattern",i))
 
@@ -332,6 +349,7 @@ print(method_A_f)
             overall_size=feq_treatment, sub_size=feq_treatment_subgroup,
             Pattern=pattern)
   return(out)
+line <- readline(prompt="Press [enter] to continue")
 }
 
 
@@ -343,23 +361,33 @@ scenario_out<-simulation(N=Nobs, phi_v=phi_1.2,
                          prob_pattern= lambda, R=Nreps)
 filename<-paste0("scenario_A_3.RData")
 save(scenario_out, file=filename) # task_id=1
-warnings()
 
+########################################################################
 # Ian's addition to view output
+Nobs
+Nreps
+
 # patterns
 patternV
+
 # pattern prevalences
 lambda
+
 # treatment effects
 phi_1.2
+
 # p(y|row=pattern, col=treatment) 
 res_rate_mat
+
 # overall PMs
 scenario_out$estimand2 
 scenario_out$estimand2_MCSE
+
 # Better treatment by pattern
 scenario_out$ex_performance_out$better_treatment_I
 round(sqrt(scenario_out$ex_performance_out$better_treatment_I*(1-scenario_out$ex_performance_out$better_treatment_I)/Nreps),4)
+
 # Best treatment by pattern
 scenario_out$ex_performance_out$best_treatment_I
 round(sqrt(scenario_out$ex_performance_out$best_treatment_I*(1-scenario_out$ex_performance_out$best_treatment_I)/Nreps),4)
+########################################################################
